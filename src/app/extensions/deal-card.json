@@ -1,0 +1,19 @@
+{
+    "type": "crm-card",
+    "data": {
+      "title": "Deal Card",
+      "uid": "deal_card",
+      "location": "crm.record.tab",
+      "module": {
+        "file": "Deal.jsx"
+      },
+      "objectTypes": [
+        {
+          "name": "deals"
+        },
+        {
+            "name": "companies"
+        }
+      ]
+    }
+  }

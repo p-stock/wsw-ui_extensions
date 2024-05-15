@@ -1,0 +1,24 @@
+{
+  "name": "UI Extensions App",
+  "description": "This is a private app that shows a custom cards on HubSpot records built with React-based frontend. This card demonstrates a simple handshake with HubSpot's serverless backend.",
+  "uid": "ui_extensions_app",
+  "scopes": [
+    "crm.objects.companies.read",
+    "crm.objects.companies.write",
+    "crm.objects.deals.read",
+    "crm.objects.deals.write"
+  ],
+  "public": false,
+  "extensions": {
+    "crm": {
+      "cards": [
+        {
+          "file": "extensions/company-card.json"
+        },
+        {
+          "file": "extensions/deal-card.json"
+        }
+      ]
+    }
+  }
+}

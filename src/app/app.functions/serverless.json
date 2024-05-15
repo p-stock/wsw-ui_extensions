@@ -1,0 +1,23 @@
+{
+  "appFunctions": {
+    "searchCustomerWswHub": {
+      "file": "search-customer-wsw-hub.js",
+      "secrets": [
+        "WSW_HUB_BASIC_AUTH_USERNAME",
+        "WSW_HUB_BASIC_AUTH_PASSWORD"
+      ]
+    },
+    "searchCompanyByDebitorIdHubSpot": {
+      "file": "search-company-by-debitor-id-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]
+    },
+    "createCompanyInHubSpot": {
+      "file": "create-company-in-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]
+    }
+  }
+}
