@@ -19,8 +19,10 @@ import {
 } from "@hubspot/ui-extensions";
 import { CrmAssociationTable } from '@hubspot/ui-extensions/crm';
 
-const HS_PORTAL_ID = 143998115;
-const HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_debitor_id_erp";
+const IS_PROD = false;
+const HS_PORTAL_ID = IS_PROD ? 139505817 : 143998115;
+const HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = IS_PROD ? "wsw_debitor_id_erp" : "wsw_debitor_id_erp";
+const HS_RELEVANT_PIPELINE_IDS = IS_PROD ? [/* 496760816 Scoping Kunde */ /*, 496760817 Scoping Intern */] : [ 496760816 /* Scoping Kunde */, 496760817 /* Scoping Intern */];
 
 // Define the extension to be run within the Hubspot CRM
 hubspot.extend(({ context, runServerlessFunction, actions }) => (
@@ -37,6 +39,9 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   const contextInfo = context;
   const dealId = context.crm.objectId;
   const [dealName, setDealName] = useState("");
+  const [dealstage, setDealstage] = useState("");
+  const [pipeline, setPipeline] = useState("");
+  const [extensionActivated, setExtensionActivated] = useState(false);
   const [searchCompanyName, setSearchCompanyName] = useState("");
   const [hubSpotCompaniesByDebitorenId, setHubSpotCompaniesByDebitorenId] = useState([]);
   const [validationMessageInput, setValidationMessageInput] = useState('');
@@ -50,9 +55,12 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
 
   // useEffect fetch properties
   useEffect(() => {
-    fetchProperties(["hs_object_id", "dealname"])
+    fetchProperties(["hs_object_id", "dealname", "pipeline" , "dealstage"])
       .then(properties => {
         setDealName(properties.dealname);
+        setPipeline(properties.pipeline);
+        setDealstage(properties.dealstage);
+        setExtensionActivated(HS_RELEVANT_PIPELINE_IDS.includes(properties.dealstage));
       })
   }, [fetchProperties]);
 
@@ -72,6 +80,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     if (! inputIsValid) {
       sendAlert({ message: `Empty Input is not valid`, type: 'danger' });
       setWswHubCustomers([]);
+      setSearchResultCompanyIdForSapDebIdIsVisible(false);
       return;
     }
     const { response } = await runServerless(
@@ -281,7 +290,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
           required={true}
           error={!inputIsValid}
           validationMessage={validationMessageInput}
-          placeholder="exampleName"
+          placeholder="search name"
           onChange={(value) => {
             setSearchCompanyName(value)
           }}
