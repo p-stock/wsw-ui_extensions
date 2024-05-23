@@ -5,7 +5,7 @@ const hubspot = require('@hubspot/api-client');
 
 /* ----------  CONSTANTS ---------- */
 const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
-const HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_debitor_id_erp";
+const HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_sap_id";
 const HS_ACCESS_TOKEN = process.env.WSW_ACCESS_TOKEN;
 /* ++++++++++  CONSTANTS ++++++++++ */
 

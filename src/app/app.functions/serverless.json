@@ -18,6 +18,18 @@
       "secrets": [
         "WSW_ACCESS_TOKEN"
       ]
+    },
+    "updateCompanyInHubSpot": {
+      "file": "update-company-in-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]
+    },
+    "getDealAssociatedCompany": {
+      "file": "get-deal-associated-company.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]
     }
   }
 }
