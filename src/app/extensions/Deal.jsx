@@ -3,8 +3,10 @@ import {
   Button,
   Divider,
   EmptyState,
+  ErrorState,
   Flex,
   Form,
+  Heading,
   Input,
   Link,
   Table,
@@ -15,6 +17,7 @@ import {
   TableCell,
   Text,
   Tile,
+  Accordion,
   hubspot
 } from "@hubspot/ui-extensions";
 import { CrmAssociationTable } from '@hubspot/ui-extensions/crm';
@@ -49,12 +52,14 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   const [validationMessageInput, setValidationMessageInput] = useState('');
   const [inputIsValid, setInputIsValid] = useState(false);
   const [wswHubCustomers, setWswHubCustomers] = useState([]);
+  const [wswHubCustomerCreateProperties, setWswHubCustomerCreateProperties] = useState({});
   const [showWswHubCustomerSearchResultTable, setWswHubCustomerSearchResultTable] = useState(false);
   const [searchResultCompanyIdForSapDebId, setSearchResultCompanyIdForSapDebId] = useState([]);
   const [searchResultCompanyIdForSapDebIdIsVisible, setSearchResultCompanyIdForSapDebIdIsVisible] = useState(false);
   const [newlyCreatedHsCompanyId, setNewlyCreatedHsCompanyId] = useState("");
   const [newlyCreatedHsCompanyIdIsVisible, setNewlyCreatedHsCompanyIdIsVisible] = useState(false);
   const [associatedCompanyId, setAssociatedCompanyId] = useState("");
+  const [associatedCompanyName, setAssociatedCompanyName] = useState("");
 
   // useEffect fetch properties
   useEffect(() => {
@@ -73,6 +78,20 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const { response } = await runServerless({ name: "getDealAssociatedCompany", parameters: { dealId: dealId }});
     console.log(response);
     setAssociatedCompanyId(response.statusCode == 200 ? response.body.id : '');
+    setAssociatedCompanyName(response.statusCode == 200 ? response.body.properties.name : '');
+    setWswHubCustomerCreateProperties(response.statusCode == 200 ? {
+        "Kontengruppe": "0001 Auftraggeber / Z001 Debitor allgemein / ...", 
+        "Buchungskreis": "",
+        "Verkaufsorganisation": "",
+        "Vertriebsweg": "",
+        "Sparte": "",
+        "Name": response.body.properties.name ? response.body.properties.name : '',
+        "Suchbegriff 1": "",
+        "Ort": response.body.properties.city ? response.body.properties.city : '',
+        "Land": response.body.properties.wsw_country ? response.body.properties.wsw_country : '',
+        "Transportzone": ""          
+      } 
+    : {})
   }, [runServerless])
 
   // handle clicks
@@ -94,14 +113,53 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
       }
     );
     if (response.statusCode == 200) {
-      sendAlert({ message: response.message });
+      // sendAlert({ message: response.message });
       setWswHubCustomers(response.body);
       setWswHubCustomerSearchResultTable(true);
       setSearchResultCompanyIdForSapDebIdIsVisible(false);
     } else {
+      setWswHubCustomerSearchResultTable(false);
+      setSearchResultCompanyIdForSapDebIdIsVisible(false);
       sendAlert({ message: response.message, type: 'danger' })
     }
   };
+
+  const handleClickCreateCustomerWswHub = async () => {
+    const { response } = await runServerless(
+      { 
+        name: "createCustomerWswHub", 
+        parameters: { 
+          wswHubCustomerCreateProperties: wswHubCustomerCreateProperties
+        } 
+      }
+    );
+
+    if (response.statusCode == 200) {
+      // sendAlert({ message: response.message });
+      // console.log(response.body);
+      let newWswCustomerId = response.body.newWswCustomerId;
+      const { response: response2 } = await runServerless(
+        {
+          name: "updateCompanyInHubSpot", 
+          parameters: { 
+            customerDebitorenId: newWswCustomerId,
+            associatedCompanyId: associatedCompanyId
+          } 
+        }
+      )
+      if (response2.statusCode == 200) {
+        sendAlert({ message: `A new customer has been created in WSW-Hub with Id ${newWswCustomerId}.` })
+        setWswHubCustomerSearchResultTable(false);
+        setSearchResultCompanyIdForSapDebIdIsVisible(false);
+      } else {
+        sendAlert({ message: response2.message, type: 'danger' })
+      }
+    } else {
+      setWswHubCustomerSearchResultTable(false);
+      setSearchResultCompanyIdForSapDebIdIsVisible(false);
+      sendAlert({ message: response.message, type: 'danger' })
+    }    
+  }
 
   const handleClickRowButtonCheckDebNummerInHubSpot = async (customer) => {
     const { response } = await runServerless(
@@ -113,7 +171,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
       }
     );
     if (response.statusCode == 200) {
-      sendAlert({ message: response.message});
+      // sendAlert({ message: response.message});
       setHubSpotCompaniesByDebitorenId(response.body);
       if (response.body.length == 0) {
         // company with sap debitoren id not yet in HubSpot -> create new company and associate with deal
@@ -158,6 +216,8 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         );
         if (response2.statusCode == 200) {
           sendAlert( { message: response2.message });
+          setWswHubCustomerSearchResultTable(false);
+          setSearchResultCompanyIdForSapDebIdIsVisible(false);
           setNewlyCreatedHsCompanyId(response2.body.id);
           setNewlyCreatedHsCompanyIdIsVisible(true);
         } else {
@@ -189,25 +249,26 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
       // setHubSpotCompaniesByDebitorenId(response.body);
       if (response.body.length == 0) {
         // company with sap debitoren id not yet in HubSpot -> create new company and associate with deal
-        sendAlert({ message: `A company with ${HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP} = ${customer['KUNNR']} currently does not exist in HubSpot.`})
+        // sendAlert({ message: `A company with ${HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP} = ${customer['KUNNR']} currently does not exist in HubSpot.`})
         setSearchResultCompanyIdForSapDebIdIsVisible(false);
-        const { response_update } = await runServerless(
+        const { response: response2 } = await runServerless(
           {
             name: "updateCompanyInHubSpot", 
             parameters: { 
               customerDebitorenId: customer['KUNNR'],
-              associatedCompanyId: associatedCompanyId,
+              associatedCompanyId: associatedCompanyId
             } 
           }
         )
-        if (response_update.statusCode == 200) {
-          sendAlert({ message: response_update.message })
+        if (response2.statusCode == 200) {
+          setWswHubCustomerSearchResultTable(false);
+          setSearchResultCompanyIdForSapDebIdIsVisible(false);
+          sendAlert({ message: response2.message })
         } else {
-          sendAlert({ message: response_update.message, type: 'danger' })
+          sendAlert({ message: response2.message, type: 'danger' })
         }
       } else {
-        // company with sap debitoren id already in HubSpot -> associate existing company with deal
-        sendAlert({ message: `Company (id = ${response.body[0].id}) with ${HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP} = ${customer['KUNNR']} already exists in HubSpot -> Follow Link below.`})
+        sendAlert({ message: `Company (id = ${response.body[0].id}) with ${HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP} = ${customer['KUNNR']} already exists in HubSpot.`})
         // setSearchResultCompanyIdForSapDebId(response.body[0].id);
         // setSearchResultCompanyIdForSapDebIdIsVisible(true);
       }
@@ -225,10 +286,12 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         propertyColumns={['name', HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP]}
         pageSize={10}
         preFilters={[
+          /*
           {
             operator: 'HAS_PROPERTY',
             property: HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP
           },
+          */
         ]}
         sort={[
           {
@@ -251,9 +314,6 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
             <TableRow>
               <TableHeader>KUNNR</TableHeader>
               <TableHeader>MCOD1</TableHeader>
-              <TableHeader>MCOD3</TableHeader>
-              <TableHeader>PSTLZ</TableHeader>
-              <TableHeader>SORTL</TableHeader>
               <TableHeader>Check HS Company</TableHeader>
               <TableHeader>Create HS Company</TableHeader>
               <TableHeader>Update assoc. HS Company</TableHeader>
@@ -264,9 +324,6 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               <TableRow key={item['KUNNR']}>
                 <TableCell>{item['KUNNR']}</TableCell>
                 <TableCell>{item['MCOD1']}</TableCell>
-                <TableCell>{item['MCOD3']}</TableCell>
-                <TableCell>{item['PSTLZ']}</TableCell>
-                <TableCell>{item['SORTL']}</TableCell>
                 <TableCell>
                   <Button onClick={() => handleClickRowButtonCheckDebNummerInHubSpot(item)}>
                     KUNNR in HS
@@ -274,12 +331,12 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
                 </TableCell>
                 <TableCell>
                   <Button onClick={() => handleClickRowButtonCreateCompanyInHubSpot(item)}>
-                    Create HS Company with KUNNR
+                    Create HS Company
                   </Button>
                 </TableCell>
                 <TableCell>
                   <Button disabled={associatedCompanyId==''} onClick={() => handleClickRowButtonUpdateCompanyInHubSpot(item)}>
-                    Update assoc. HS Company with KUNNR
+                    Update assoc. HS Company
                   </Button>
                 </TableCell>
               </TableRow>
@@ -290,20 +347,39 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
       )
     } else {
       return (
-        <Text>
-        No results found for company name {searchCompanyName} 
-        </Text>
+        <EmptyState title="No results found" layout="vertical" reverseOrder={true}>
+          <Text>Try different search input</Text>
+        </EmptyState>
       )
     }
   }
 
+  function wswHubCustomerCreateComponent() {
+    return (
+      <Flex direction="column" align="start" gap="flush">
+        <Text format={{fontWeight: 'bold'}}>
+          Erstelle Debitor in WSW-Hub
+        </Text>
+        <Button disabled={associatedCompanyId==''} type="button" onClick={handleClickCreateCustomerWswHub}>
+          Erstellen
+        </Button>
+        <Text variant="microcopy">
+          Nur möglich, wenn Deal-Company Assoziierung vorhanden.
+        </Text>
+      </Flex>
+    )   
+  }
+
   function searchResultCompanyIdForSapDebIdComponent() {
     return (
-      <Tile flush={false}>
+      <Flex direction="column" align="start" gap="flush">
+        <Text format={{fontWeight: 'bold'}}>
+          Company mit Sap Debitoren Id
+        </Text>
         <Text>
           <Link href={`https://app-eu1.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-2/${searchResultCompanyIdForSapDebId}`} variant="dark">Link</Link> to existing company with id {searchResultCompanyIdForSapDebId}.
         </Text>
-      </Tile>
+      </Flex>
     )
   }
 
@@ -317,55 +393,65 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     )
   }
 
+  function associatedHsCompanyLinkComponent() {
+    return (
+      <Flex direction="column" align="start" gap="flush">
+        <Text>
+          <Link href={`https://app-eu1.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-2/${associatedCompanyId}`} variant="dark">Link</Link> to associated company {associatedCompanyName} with id {associatedCompanyId}.
+        </Text>
+      </Flex>
+    )
+  }
+
   // entire component
   return (
     <>
-      <Text>
-        <Text format={{ fontWeight: "bold" }}>
-          UI extension Data Flow
-        </Text>
-      </Text>
-      <Text format={{ fontWeight: "bold" }}>
-          Associated Companies with {HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP} populated
-      </Text>
-      <Flex direction="row" align="end" gap="small">
-        {hsAssociatedCompaniesTableComponent()}
-      </Flex>
-      <Divider />
-      <Flex direction="row" align="end" gap="small">
-        <Input
-          label="Search Company Name"
-          name="companySearchName"
-          description="Search for Name in WSW-Hub"
-          required={true}
-          error={!inputIsValid}
-          validationMessage={validationMessageInput}
-          tooltip="Functionality only activated when Deal in Scoping Stage."
-          placeholder="search name"
-          onChange={(value) => {
-            setSearchCompanyName(value)
-          }}
-          readOnly={!extensionActivated}
-          onInput={(value) => {
-            if (!value || value == '') {
-              setValidationMessageInput('Empty input is not valid');
-              setInputIsValid(false)
-            } else {
-              setValidationMessageInput('Valid Input');
-              setInputIsValid(true);
-            }
-          }}
-        />
-      </Flex>
-      <Button disabled={!extensionActivated} type="submit" onClick={handleClickSearchCustomersWswHub}>
-        Suche Debitorenname in WSW-Hub
-      </Button>
-      <Divider />
-      { showWswHubCustomerSearchResultTable ? wswHubCustomerSearchResultTableComponent() : null }
-      { searchResultCompanyIdForSapDebIdIsVisible ? searchResultCompanyIdForSapDebIdComponent() : null }
-      { newlyCreatedHsCompanyIdIsVisible ? newlyCreatedHsCompanyLinkComponent() : null }
-      <Text>
-      </Text>
+      <Heading>UI extension Data Flow</Heading>
+      <Accordion title="Associated Companies" defaultOpen={true}>
+        <Flex direction="row" align="start" gap="flush">
+          {hsAssociatedCompaniesTableComponent()}
+        </Flex>
+        <Divider />
+      </Accordion>
+      <Accordion title="Search WSW for Company Name" defaultOpen={false}>
+        <Flex direction="column" align="start" gap="flush">
+          <Input
+            label="Search Company Name"
+            name="companySearchName"
+            description="Search for Name in WSW-Hub"
+            required={true}
+            error={!inputIsValid}
+            validationMessage={validationMessageInput}
+            tooltip="Functionality only activated when Deal in Scoping Stage."
+            placeholder="search name"
+            onChange={(value) => {
+              setSearchCompanyName(value)
+            }}
+            readOnly={!extensionActivated}
+            onInput={(value) => {
+              if (!value || value == '') {
+                setValidationMessageInput('Empty input is not valid');
+                setInputIsValid(false)
+              } else {
+                setValidationMessageInput('Valid Input');
+                setInputIsValid(true);
+              }
+            }}
+          />
+          <Button disabled={!extensionActivated} type="submit" onClick={handleClickSearchCustomersWswHub}>
+            Suchen
+          </Button>
+          <Divider />
+          { showWswHubCustomerSearchResultTable ? wswHubCustomerSearchResultTableComponent() : null }
+          { searchResultCompanyIdForSapDebIdIsVisible ? searchResultCompanyIdForSapDebIdComponent() : null }
+          { newlyCreatedHsCompanyIdIsVisible ? newlyCreatedHsCompanyLinkComponent() : null }
+        </Flex>
+        <Divider />
+      </Accordion>
+      <Accordion title="Create WSW Customer from associated HS Company" defaultOpen={false}>
+        { wswHubCustomerCreateComponent() }
+        { (associatedCompanyId && associatedCompanyId!='')  ? associatedHsCompanyLinkComponent() : null }
+      </Accordion>
     </>
   );
 };

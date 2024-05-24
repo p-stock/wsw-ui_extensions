@@ -27,6 +27,8 @@ async function getDealAssociatedCompanies(dealId) {
         "properties": [
             "hs_object_id",
             "name",
+            "city",
+            "wsw_country",
             HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP
         ],
         "after": 0,

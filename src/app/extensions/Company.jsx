@@ -19,7 +19,7 @@ import {
 } from "@hubspot/ui-extensions";
 
 const HS_PORTAL_ID = 143998115;
-const HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_debitor_id_erp";
+const HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_sap_id";
 
 // Define the extension to be run within the Hubspot CRM
 hubspot.extend(({ context, runServerlessFunction, actions }) => (

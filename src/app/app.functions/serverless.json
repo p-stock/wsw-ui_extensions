@@ -7,6 +7,13 @@
         "WSW_HUB_BASIC_AUTH_PASSWORD"
       ]
     },
+    "createCustomerWswHub": {
+      "file": "create-customer-wsw-hub.js",
+      "secrets": [
+        "WSW_HUB_BASIC_AUTH_USERNAME",
+        "WSW_HUB_BASIC_AUTH_PASSWORD"
+      ]
+    },
     "searchCompanyByDebitorIdHubSpot": {
       "file": "search-company-by-debitor-id-hubspot.js",
       "secrets": [

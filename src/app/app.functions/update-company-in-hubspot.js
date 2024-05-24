@@ -12,7 +12,7 @@ const HS_ASSOCIATION_TYPE_COMPANY_TO_DEAL = 6;
 
 /* ---------- FUNCTIONS ---------- */
 async function updateHubSpotCompany(companyId,updateBody) {
-    let data = createBody;
+    let data = updateBody;
 
     let config = {
         method: 'patch',
@@ -26,9 +26,9 @@ async function updateHubSpotCompany(companyId,updateBody) {
       };
       
       try {
-        let responseCreateCompany = await axios.request(config);
-        console.log('responseStatus function createCompany:',responseCreateCompany.status);
-        return responseCreateCompany.data
+        let responseUpdateCompany = await axios.request(config);
+        console.log('responseStatus function updateCompany:',responseUpdateCompany.status);
+        return responseUpdateCompany.data
       } catch(error) {
         throw new Error(error);
       }
@@ -46,7 +46,11 @@ exports.main = async (context = {}) => {
             [HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP]: customerDebitorenId
         }
     }
+
+    console.log(updateBody);
+
     let resultUpdateHubSpotCompany = await updateHubSpotCompany(associatedCompanyId,updateBody);
+    console.log(resultUpdateHubSpotCompany);
     return {
       message: `Successfully executed the serverless function (update-company-in-hubspot).`, 
       body: resultUpdateHubSpotCompany,
