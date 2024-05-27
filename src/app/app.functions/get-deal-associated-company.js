@@ -55,7 +55,7 @@ async function getDealAssociatedCompanies(dealId) {
     try {
         let responseSearchCompanies = await axios.request(config);
         console.log('responseStatus function getDealAssociatedCompany:',responseSearchCompanies.status);
-        // console.log(responseSearchCompanies);
+        console.log(responseSearchCompanies.data.results);
         return responseSearchCompanies.data.results
     } catch(error) {
         throw new Error(error);

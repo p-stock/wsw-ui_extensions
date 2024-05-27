@@ -76,7 +76,6 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
  // useEffect get deal's associated company
   useEffect(async () => {
     const { response } = await runServerless({ name: "getDealAssociatedCompany", parameters: { dealId: dealId }});
-    console.log(response);
     setAssociatedCompanyId(response.statusCode == 200 ? response.body.id : '');
     setAssociatedCompanyName(response.statusCode == 200 ? response.body.properties.name : '');
     setWswHubCustomerCreateProperties(response.statusCode == 200 ? {
@@ -358,13 +357,13 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     return (
       <Flex direction="column" align="start" gap="flush">
         <Text format={{fontWeight: 'bold'}}>
-          Erstelle Debitor in WSW-Hub
+          Create Customer in WSW-Hub
         </Text>
         <Button disabled={associatedCompanyId==''} type="button" onClick={handleClickCreateCustomerWswHub}>
-          Erstellen
+          Create
         </Button>
         <Text variant="microcopy">
-          Nur möglich, wenn Deal-Company Assoziierung vorhanden.
+          Only possible if deal-company association exists and associated company has no SAP customer id.
         </Text>
       </Flex>
     )   
@@ -374,7 +373,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     return (
       <Flex direction="column" align="start" gap="flush">
         <Text format={{fontWeight: 'bold'}}>
-          Company mit Sap Debitoren Id
+          Company with SAP customer Id
         </Text>
         <Text>
           <Link href={`https://app-eu1.hubspot.com/contacts/${HS_PORTAL_ID}/record/0-2/${searchResultCompanyIdForSapDebId}`} variant="dark">Link</Link> to existing company with id {searchResultCompanyIdForSapDebId}.
@@ -439,7 +438,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
             }}
           />
           <Button disabled={!extensionActivated} type="submit" onClick={handleClickSearchCustomersWswHub}>
-            Suchen
+            Search
           </Button>
           <Divider />
           { showWswHubCustomerSearchResultTable ? wswHubCustomerSearchResultTableComponent() : null }
