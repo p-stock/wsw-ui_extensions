@@ -1,0 +1,16 @@
+{
+    "type": "crm-card",
+    "data": {
+      "title": "WOPP Card",
+      "uid": "wopp_card",
+      "location": "crm.record.tab",
+      "module": {
+        "file": "Wopp.jsx"
+      },
+      "objectTypes": [
+        {
+          "name": "p_wsw_wopps"
+        }
+      ]
+    }
+  }

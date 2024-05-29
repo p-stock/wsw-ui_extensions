@@ -20,6 +20,9 @@
         },
         {
           "file": "extensions/deal-card.json"
+        },
+        {
+          "file": "extensions/wopp-card.json"
         }
       ]
     }
