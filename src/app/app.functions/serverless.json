@@ -32,11 +32,23 @@
         "WSW_ACCESS_TOKEN"
       ]
     },
+    "updateParentCustomerInHubSpot": {
+      "file": "update-parent-customer-in-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]
+    },
     "getDealAssociatedCompany": {
       "file": "get-deal-associated-company.js",
       "secrets": [
         "WSW_ACCESS_TOKEN"
       ]
+    },
+    "getParentCustomerCreateProperties": {
+      "file": "get-parent-customer-create-properties.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]      
     }
   }
 }

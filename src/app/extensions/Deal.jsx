@@ -27,6 +27,14 @@ const HS_PORTAL_ID = IS_PROD ? 139505817 : 143998115;
 const HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = IS_PROD ? "wsw_debitor_id_erp" : "wsw_sap_id";
 const HS_RELEVANT_PIPELINE_IDS = IS_PROD ? [/* 496760816 Scoping Kunde */ /*, 496760817 Scoping Intern */] : [ "496760816" /* Scoping Kunde */, "496760817" /* Scoping Intern */];
 const HS_DEAL_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = IS_PROD ? "wsw_account_sap_id" : "wsw_account_sap_id";
+const HS_CO_PARENT_CUSTOMER_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = IS_PROD ? "wsw_debitor_id_erp" : "wsw_sap_id";
+const HS_CO_PARENT_CUSTOMER_OBJECT_TYPE_ID = IS_PROD ? null : "2-129833360";
+const HS_CO_PARENT_CUSTOMER_FULLY_QUALIFIED_NAME = IS_PROD ? null : `p${HS_PORTAL_ID}_parent_customers`;
+const HS_CO_PARENT_CUSTOMER_TO_COMPANY_ASSOCIATION_TYPE_ID = IS_PROD ? null : 59;
+const HS_COMPANY_TO_CO_PARENT_CUSTOMER_ASSOCIATION_TYPE_ID = IS_PROD ? null : 60;
+const HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_sap_id";
+const HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_id_hs";
+
 
 // Define the extension to be run within the Hubspot CRM
 hubspot.extend(({ context, runServerlessFunction, actions }) => (
@@ -53,6 +61,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   const [inputIsValid, setInputIsValid] = useState(false);
   const [wswHubCustomers, setWswHubCustomers] = useState([]);
   const [wswHubCustomerCreateProperties, setWswHubCustomerCreateProperties] = useState({});
+  const [wswHubParentCustomerCreateProperties, setWswHubParentCustomerCreateProperties] = useState({});
   const [showWswHubCustomerSearchResultTable, setWswHubCustomerSearchResultTable] = useState(false);
   const [searchResultCompanyIdForSapDebId, setSearchResultCompanyIdForSapDebId] = useState([]);
   const [searchResultCompanyIdForSapDebIdIsVisible, setSearchResultCompanyIdForSapDebIdIsVisible] = useState(false);
@@ -60,6 +69,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   const [newlyCreatedHsCompanyIdIsVisible, setNewlyCreatedHsCompanyIdIsVisible] = useState(false);
   const [associatedCompanyId, setAssociatedCompanyId] = useState("");
   const [associatedCompanyName, setAssociatedCompanyName] = useState("");
+  const [associatedParentCustomerId, setAssociatedParentCustomerId] = useState("");
 
   // useEffect fetch properties
   useEffect(() => {
@@ -78,6 +88,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const { response } = await runServerless({ name: "getDealAssociatedCompany", parameters: { dealId: dealId }});
     setAssociatedCompanyId(response.statusCode == 200 ? response.body.id : '');
     setAssociatedCompanyName(response.statusCode == 200 ? response.body.properties.name : '');
+    setAssociatedParentCustomerId(response.statusCode == 200 && response.body.properties[HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE] ? response.body.properties[HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE] : '')
     setWswHubCustomerCreateProperties(response.statusCode == 200 ? {
         "Kontengruppe": "0001 Auftraggeber / Z001 Debitor allgemein / ...", 
         "Buchungskreis": "",
@@ -90,7 +101,10 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         "Land": response.body.properties.wsw_country ? response.body.properties.wsw_country : '',
         "Transportzone": ""          
       } 
-    : {})
+    : {});
+    setWswHubParentCustomerCreateProperties(response.statusCode == 200 && response.body.properties[HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE] && !response.body.properties[HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE] ?
+      await runServerless({ name: "getParentCustomerCreateProperties", parameters: { parentCustomerId: response.body.properties[HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE] }})
+    : {});
   }, [runServerless])
 
   // handle clicks
@@ -124,11 +138,13 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   };
 
   const handleClickCreateCustomerWswHub = async () => {
+    // create wsw customer and parent customer
     const { response } = await runServerless(
       { 
         name: "createCustomerWswHub", 
         parameters: { 
-          wswHubCustomerCreateProperties: wswHubCustomerCreateProperties
+          wswHubCustomerCreateProperties: wswHubCustomerCreateProperties,
+          wswHubParentCustomerCreateProperties: wswHubParentCustomerCreateProperties
         } 
       }
     );
@@ -136,6 +152,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     if (response.statusCode == 200) {
       // sendAlert({ message: response.message });
       // console.log(response.body);
+      // update hubspot customer
       let newWswCustomerId = response.body.newWswCustomerId;
       const { response: response2 } = await runServerless(
         {
@@ -152,6 +169,25 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         setSearchResultCompanyIdForSapDebIdIsVisible(false);
       } else {
         sendAlert({ message: response2.message, type: 'danger' })
+      }
+      // update hubspot custom object parent customer
+      if (response.body.newWswParentCustomerId) {
+        let newWswParentCustomerId = response.body.newWswParentCustomerId;
+        const { response: response3 } = await runServerless(
+          {
+            name: "updateParentCustomerInHubSpot", 
+            parameters: { 
+              parentCustomerDebitorenId: newWswParentCustomerId,
+              associatedCompanyId: associatedCompanyId,
+              associatedParentCustomerId: associatedParentCustomerId
+            } 
+          }
+        )
+        if (response3.statusCode == 200) {
+          sendAlert({ message: `A new parent customer has been created in WSW-Hub with Id ${newWswParentCustomerId}.` })
+        } else {
+          sendAlert({ message: response3.message, type: 'danger' })
+        }
       }
     } else {
       setWswHubCustomerSearchResultTable(false);
@@ -282,7 +318,14 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     return (
       <CrmAssociationTable
         objectTypeId="0-2"
-        propertyColumns={['name', HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP]}
+        propertyColumns={
+          [
+            'name',
+            HS_COMPANY_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP,
+            HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE,
+            HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE
+          ]
+        }
         pageSize={10}
         preFilters={[
           /*

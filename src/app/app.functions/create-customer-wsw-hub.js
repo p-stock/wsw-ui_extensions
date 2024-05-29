@@ -42,18 +42,39 @@ async function createWswHubCustomer(createBody) {
 /* ++++++++++ FUNCTIONS ++++++++++ */
 
 exports.main = async (context = {}) => {
-  const { wswHubCustomerCreateProperties } = context.parameters;
-  let responseType = 'SUCCESS';
-  let responseBody = 'Successfully run customer create in WSW Hub.';
-
+  const { wswHubCustomerCreateProperties, wswHubParentCustomerCreateProperties } = context.parameters;
   try {
-    // make wsw hub call
+    // make wsw hub call create customer
+    console.log('create customer wsw:',JSON.stringify(wswHubCustomerCreateProperties));
+    
+    // -TEST
+    let returnBody = {
+      newWswCustomerId: '123customer',
+      newWswParentCustomerId: '3456parentcustomer'
+    }
+    /*
     let resultCreateWswHubCustomer = await createWswHubCustomer(wswHubCustomerCreateProperties);
+    let returnBody = {
+      newWswCustomerId: resultCreateWswHubCustomer[WSW_NEW_CUSTOMER_ID_PROPERTY_INTERNAL_VALUE]
+    }
+    */
+   // +TEST
+
+    // make wsw hub call create parent customer
+    let createWswHubParentCustomer = ! Object.keys(wswHubParentCustomerCreateProperties).length === 0;
+    if (createWswHubParentCustomer) {
+      console.log('create parent customer wsw:',JSON.stringify(createWswHubParentCustomer));
+      // -TEST
+      /*
+      let resultCreateWswHubParentCustomer = await createWswHubCustomer(wswHubParentCustomerCreateProperties);
+      returnBody[newWswParentCustomerId] = resultCreateWswHubParentCustomer[WSW_NEW_CUSTOMER_ID_PROPERTY_INTERNAL_VALUE];
+      */
+     // +TEST
+    }
+
     return {
-      message: `Successfully executed the serverless function (create-customer-wsw-hub).`, 
-      body: {
-        newWswCustomerId: resultCreateWswHubCustomer[WSW_NEW_CUSTOMER_ID_PROPERTY_INTERNAL_VALUE]
-      },
+      message: `Successfully executed the serverless function (create-customer-wsw-hub). Customer ${createWswHubParentCustomer ? 'and Parent customer ' : ''}created in wsw: `, 
+      body: returnBody,
       statusCode: 200
     }
   } catch (error) {

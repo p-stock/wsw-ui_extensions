@@ -30,6 +30,7 @@ async function updateHubSpotCompany(companyId,updateBody) {
         console.log('responseStatus function updateCompany:',responseUpdateCompany.status);
         return responseUpdateCompany.data
       } catch(error) {
+        console.log(error);
         throw new Error(error);
       }
 }

@@ -8,6 +8,8 @@ const HUBSPOT_BASE_URL = 'https://api.hubapi.com';
 const HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP = "wsw_sap_id";
 const HS_ACCESS_TOKEN = process.env.WSW_ACCESS_TOKEN;
 const HS_ASSOCIATION_TYPE_COMPANY_TO_DEAL = 6;
+const HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE = "wsw_parent_customer_id_sap";
+const HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE = "wsw_parent_customer_id_hs";
 /* ++++++++++  CONSTANTS ++++++++++ */
 
 /* ---------- FUNCTIONS ---------- */
@@ -29,7 +31,9 @@ async function getDealAssociatedCompanies(dealId) {
             "name",
             "city",
             "wsw_country",
-            HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP
+            HS_PROPERTY_INTERNAL_VALUE_DEBITOREN_NUMMER_SAP,
+            HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE,
+            HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE
         ],
         "after": 0,
         "limit": 2,
