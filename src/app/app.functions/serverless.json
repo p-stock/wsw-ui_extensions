@@ -49,6 +49,24 @@
       "secrets": [
         "WSW_ACCESS_TOKEN"
       ]      
+    },
+    "createWoppNoteInHubSpot": {
+      "file": "create-wopp-note-in-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]      
+    },
+    "deleteWoppNoteFromHubSpot": {
+      "file": "delete-wopp-note-from-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]      
+    },
+    "updateWoppNoteInHubSpot": {
+      "file": "update-wopp-note-in-hubspot.js",
+      "secrets": [
+        "WSW_ACCESS_TOKEN"
+      ]      
     }
   }
 }

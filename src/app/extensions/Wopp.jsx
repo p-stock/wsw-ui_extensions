@@ -16,6 +16,7 @@ import {
   TableRow,
   TableCell,
   Text,
+  TextArea,
   Tile,
   Accordion,
   hubspot
@@ -57,19 +58,31 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const [woppNotes3, setWoppNotes3] = useState("");
     const [showWoppNotes, setShowWoppNotes] = useState(true);
     const [allWoppNotes, setAllWoppNotes] = useState([]);
+    const [newNoteAmount, setNewNoteAmount] = useState(null);
+    const [newNoteDescription, setNewNoteDescription] = useState(null);
+    const [newNoteMaterial, setNewNoteMaterial] = useState(null);
+    const [newNoteKurztext, setNewNoteKurztext] = useState(null);
+    const [newNoteErgaenztVon, setNewNoteErgaenztVon] = useState(null);
+    const [woppUpdateNoteFormVisible,setWoppUpdateNoteFormVisible] = useState(false);
+    const [woppUpdateNotePosition, setWoppUpdateNotePosition] = useState(null);
+    const [woppUpdateNoteDescription, setWoppUpdateNoteDescription] = useState(null);
+    const [woppUpdateNoteAmount, setWoppUpdateNoteAmount] = useState(null);
+    const [woppUpdateNoteKurztext, setWoppUpdateNoteKurztext] = useState(null);
+    const [woppUpdateNoteMaterial, setWoppUpdateNoteMaterial] = useState(null);
+    const [woppUpdateNoteErgaenztVon, setWoppUpdateNoteErgaenztVon] = useState(null);
 
-    function getAllWappNotesArray(wn1,wn2,wn3) {
-        let allWappNotes = [];
+    function getAllWoppNotesArray(wn1,wn2,wn3) {
+        let allWoppNotes = [];
         if (wn1) {
-            allWappNotes = allWappNotes.concat(JSON.parse(wn1));
+            allWoppNotes = allWoppNotes.concat(JSON.parse(wn1));
         }
         if (wn2) {
-            allWappNotes = allWappNotes.concat(JSON.parse(wn2));
+            allWoppNotes = allWoppNotes.concat(JSON.parse(wn2));
         }
         if (wn3) {
-            allWappNotes = allWappNotes.concat(JSON.parse(wn3));
+            allWoppNotes = allWoppNotes.concat(JSON.parse(wn3));
         }
-        return allWappNotes;
+        return allWoppNotes;
     }
 
     // useEffect fetch properties
@@ -79,76 +92,156 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
             setWoppNotes1(properties.wsw_wopp_notes_1);
             setWoppNotes2(properties.wsw_wopp_notes_2);
             setWoppNotes3(properties.wsw_wopp_notes_3);
-            setAllWoppNotes(getAllWappNotesArray(properties.wsw_wopp_notes_1,properties.wsw_wopp_notes_2,properties.wsw_wopp_notes_3));
+            setAllWoppNotes(getAllWoppNotesArray(properties.wsw_wopp_notes_1,properties.wsw_wopp_notes_2,properties.wsw_wopp_notes_3));
         })
     }, [fetchProperties]);
 
+    /*
     // useEffect get deal's associated company
     useEffect(async () => {
-        const { response } = await runServerless({ name: "getWoppNotesAs", parameters: { woppNotes1: woppNotes1, woppNotes2: woppNotes2, woppNotes3: woppNotes3 }});
+        const { response } = await runServerless({ name: "getWoppNotesAsArray", parameters: { woppNotes1: woppNotes1, woppNotes2: woppNotes2, woppNotes3: woppNotes3 }});
         setAssociatedCompanyId(response.statusCode == 200 ? response.body.id : '');
     }, [runServerless])
+    */
 
     // handle clicks
-    const handleClickRowButtonUpdate = async () => {
-        sendAlert({ message: 'check', type: 'danger' })
+    const handleClickRowButtonUpdate = async (note) => {
+        setWoppUpdateNotePosition(note.position);
+        setWoppUpdateNoteAmount(note.amount ? note.amount : '');
+        setWoppUpdateNoteDescription(note.description ?  note.description : '');
+        setWoppUpdateNoteKurztext(note.kurztext ? note.kurztext : '');
+        setWoppUpdateNoteMaterial(note.material ? note.material : '');
+        setWoppUpdateNoteErgaenztVon(note.ergaenzt_von ? note.ergaenzt_von : '');
+        setWoppUpdateNoteFormVisible(true);
     }
 
-    const handleClickRowButtonDelete = async () => {
-        sendAlert({ message: 'check', type: 'danger' })
+    const handleClickRowButtonDelete = async (note) => {
+        const { response } = await runServerless(
+            {
+                name: "deleteWoppNoteFromHubSpot",
+                parameters: {
+                    woppId: woppId,
+                    woppNotes1: woppNotes1, 
+                    woppNotes2: woppNotes2, 
+                    woppNotes3: woppNotes3, 
+                    contextInfo: contextInfo, 
+                    notePosition: note['position']  
+                }
+            }
+        )
+        
+        if (response.statusCode == 200) {
+            sendAlert({ message: 'check pos', type: 'danger' })
+        } else {
+            sendAlert({ message: 'check neg', type: 'danger' })
+        }
+    }
+
+    const handleClickButtonCreate = async () => {
+        const { response } = await runServerless(
+            { 
+                name: "createWoppNoteInHubSpot", 
+                parameters: { 
+                    woppId: woppId,
+                    newNoteMaterial: newNoteMaterial,
+                    newNoteAmount: newNoteAmount,
+                    newNoteDescription: newNoteDescription,
+                    newNoteErgaenztVon: newNoteErgaenztVon,
+                    newNoteKurztext: newNoteKurztext,
+                    woppNotes1: woppNotes1,
+                    woppNotes2: woppNotes2,
+                    woppNotes3: woppNotes3,
+                    contextInfo: contextInfo 
+                } 
+            }
+        );
+
+        if (response.statusCode == 200) {
+            sendAlert({ message: 'check create pos', type: 'danger' })
+        } else {
+            sendAlert({ message: 'check create neg', type: 'danger' })
+        }
+    }
+
+    const handleClickButtonUpdate = async () => {
+        const { response } = await runServerless(
+            { 
+                name: "updateWoppNoteInHubSpot", 
+                parameters: { 
+                    woppId: woppId,
+                    notePosition: woppUpdateNotePosition,
+                    woppNotes1: woppNotes1,
+                    woppNotes2: woppNotes2,
+                    woppNotes3: woppNotes3,
+                    updateAmount: woppUpdateNoteAmount,
+                    updateMaterial: woppUpdateNoteMaterial, 
+                    updateDescription: woppUpdateNoteDescription,
+                    updateKurztext: woppUpdateNoteKurztext,
+                    updateErgaenztVon: woppUpdateNoteErgaenztVon,
+                    updateTime: new Date().toISOString(),
+                    userEmail: contextInfo.user.email 
+                } 
+            }
+        );        
+        
+        if (response.statusCode == 200) {
+            sendAlert({ message: 'check update pos', type: 'danger' })
+        } else {
+            sendAlert({ message: 'check update neg', type: 'danger' })
+        }
     }
 
     // component functions
-    function woppNotesTable() {
+    function woppNotesTable() {   
         if (allWoppNotes.length > 0) {
             return (
                 <Flex>
                     <Table paginated="true" maxVisiblePageButtons="5" showFirstLastButtons="true">
-                    <TableHead>
-                        <TableRow>
-                        <TableHeader>Position</TableHeader>
-                        <TableHeader>Material</TableHeader>
-                        <TableHeader>Kurztext</TableHeader>
-                        <TableHeader>Menge</TableHeader>
-                        <TableHeader>ME</TableHeader>
-                        <TableHeader>Beschreibung</TableHeader>
-                        <TableHeader>Ergänzt von</TableHeader>
-                        <TableHeader>Geändert von</TableHeader>
-                        <TableHeader>Update</TableHeader>
-                        <TableHeader>Delete</TableHeader>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {allWoppNotes.map((note) => (
-                        <TableRow key={item['Position']}>
-                            <TableCell>{item['Position']}</TableCell>
-                            <TableCell>{item['Material']}</TableCell>
-                            <TableCell>{item['Kurztext']}</TableCell>
-                            <TableCell>{item['Menge']}</TableCell>
-                            <TableCell>{item['ME']}</TableCell>
-                            <TableCell>{item['Beschreibung']}</TableCell>
-                            <TableCell>{item['Ergänzt von']}</TableCell>
-                            <TableCell>{item['Geändert von']}</TableCell>
-                            <TableCell>
-                            <Button onClick={() => handleClickRowButtonUpdate(note)}>
-                                UPDATE
-                            </Button>
-                            </TableCell>
-                            <TableCell>
-                            <Button onClick={() => handleClickRowButtonDelete(note)}>
-                                DELETE
-                            </Button>
-                            </TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeader>Position</TableHeader>
+                                <TableHeader>Material</TableHeader>
+                                <TableHeader>Kurztext</TableHeader>
+                                <TableHeader>Menge</TableHeader>
+                                <TableHeader>ME</TableHeader>
+                                <TableHeader>Beschreibung</TableHeader>
+                                <TableHeader>Ergänzt von</TableHeader>
+                                <TableHeader>Geändert von</TableHeader>
+                                <TableHeader>Update</TableHeader>
+                                <TableHeader>Delete</TableHeader>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {allWoppNotes.map((note) => (
+                            <TableRow key={note['position']}>
+                                <TableCell>{note['position']}</TableCell>
+                                <TableCell>{note['material']}</TableCell>
+                                <TableCell>{note['kurztext']}</TableCell>
+                                <TableCell>{note['amount']}</TableCell>
+                                <TableCell>{note['me']}</TableCell>
+                                <TableCell>{note['description']}</TableCell>
+                                <TableCell>{note['ergaenzt_von']}</TableCell>
+                                <TableCell>{note['updated_by']}</TableCell>
+                                <TableCell>
+                                    <Button onClick={() => handleClickRowButtonUpdate(note)}>
+                                        UPDATE
+                                    </Button>
+                                </TableCell>
+                                <TableCell>
+                                    <Button onClick={() => handleClickRowButtonDelete(note)}>
+                                        DELETE
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
                     </Table>
                 </Flex>
             )
         } else {
             return (
                 <EmptyState title="No results found" layout="vertical" reverseOrder={true}>
-                <Text>Try different search input</Text>
+                <Text>There are no notes for the wopp available.</Text>
                 </EmptyState>
             )
         }
@@ -156,9 +249,157 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     
     function woppCreateNoteForm() {
         return (
-            <Text>check</Text>
-        )
+            <Accordion title="Create New Note" defaultOpen={false}>
+            <Form
+            onSubmit={() => {
+              console.log('Form submitted!');
+            }}
+            preventDefault={true}
+          >
+            <Input
+              label="Material"
+              name="material"
+              tooltip="Please enter material"
+              description="Please enter material"
+              placeholder="Material"
+              onChange={(value) => {
+                setNewNoteMaterial(value)
+              }}
+            />
+            <TextArea
+              label="Kurztext"
+              name="kurztext"
+              tooltip="Please enter kurztext"
+              description="Please enter kurztext"
+              placeholder="Kurztext"
+              onChange={(value) => {
+                setNewNoteKurztext(value)
+              }}
+            />
+            <Input
+              label="Menge"
+              name="menge"
+              tooltip="Please enter amount"
+              description="Please enter amount"
+              placeholder="Menge"
+              onChange={(value) => {
+                setNewNoteAmount(value)
+              }}
+            />
+            <TextArea
+              label="Beschreibung"
+              name="beschreibung"
+              tooltip="Please enter description"
+              description="Please enter description"
+              placeholder="Description"
+              onChange={(value) => {
+                setNewNoteDescription(value)
+              }}
+            />
+            <Input
+              label="Ergänzt von"
+              name="ergaenzt_von"
+              tooltip="Please enter ergänzt von"
+              description="Please enter ergänzt von"
+              placeholder="Ergänzt von"
+              onChange={(value) => {
+                setNewNoteErgaenztVon(value)
+              }}
+            />
+            <Button
+              onClick={() => {
+                handleClickButtonCreate()
+              }}
+              variant="primary"
+              type="submit"
+            >
+              Create Note
+            </Button>
+          </Form>
+          </Accordion>
+        );
+    }
 
+    function woppUpdateNoteForm() {
+        return (
+            <Flex direction="column" align="start" gap="flush">
+            <Divider distance='medium'></Divider>
+            <Text format={{ fontWeight: 'bold' }}>
+                Update Wopp Note at Position {woppUpdateNotePosition}
+            </Text>
+            <Form
+            onSubmit={() => {
+              console.log('Form submitted!');
+            }}
+            preventDefault={true}
+          >
+            <Input
+              label="Material"
+              name="material"
+              tooltip="Please enter material"
+              description="Please enter material"
+              placeholder="Material"
+              value={woppUpdateNoteMaterial}
+              onChange={(value) => {
+                setNewNoteMaterial(value)
+              }}
+            />
+            <TextArea
+              label="Kurztext"
+              name="kurztext"
+              tooltip="Please enter kurztext"
+              description="Please enter kurztext"
+              placeholder="Kurztext"
+              value={woppUpdateNoteKurztext}
+              onChange={(value) => {
+                setNewNoteKurztext(value)
+              }}
+            />
+            <Input
+              label="Menge"
+              name="menge"
+              tooltip="Please enter quantity"
+              description="Please enter quantity"
+              placeholder="Menge"
+              value={woppUpdateNoteAmount}
+              onChange={(value) => {
+                setNewNoteAmount(value)
+              }}
+            />
+            <TextArea
+              label="Beschreibung"
+              name="beschreibung"
+              tooltip="Please enter description"
+              description="Please enter description"
+              placeholder="Description"
+              value={woppUpdateNoteDescription}
+              onChange={(value) => {
+                setNewNoteDescription(value)
+              }}
+            />
+            <Input
+              label="Ergänzt von"
+              name="ergaenzt_von"
+              tooltip="Please enter ergänzt von"
+              description="Please enter ergänzt von"
+              placeholder="Ergänzt von"
+              value={woppUpdateNoteErgaenztVon}
+              onChange={(value) => {
+                setNewNoteErgaenztVon(value)
+              }}
+            />
+            <Button
+              onClick={() => {
+                handleClickButtonUpdate()
+              }}
+              variant="primary"
+              type="submit"
+            >
+              Update Note
+            </Button>
+          </Form>
+          </Flex>
+        );
     }
 
     // entire component
@@ -166,7 +407,8 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         <>
         <Heading>UI extension WOPP Notes</Heading>
             <Flex direction="column" align="start" gap="flush">
-            { showWoppNotes ? woppNotesTable() : null }
+            { woppNotesTable() }
+            { woppUpdateNoteFormVisible ? woppUpdateNoteForm(woppUpdateNotePosition) : null }
             { woppCreateNoteForm() }
             </Flex>
         </>
