@@ -34,6 +34,7 @@ const HS_CO_PARENT_CUSTOMER_TO_COMPANY_ASSOCIATION_TYPE_ID = IS_PROD ? null : 59
 const HS_COMPANY_TO_CO_PARENT_CUSTOMER_ASSOCIATION_TYPE_ID = IS_PROD ? null : 60;
 const HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_sap_id";
 const HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_id_hs";
+const PAGE_SIZE = 5;
 
 
 // Define the extension to be run within the Hubspot CRM
@@ -70,6 +71,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
   const [associatedCompanyId, setAssociatedCompanyId] = useState("");
   const [associatedCompanyName, setAssociatedCompanyName] = useState("");
   const [associatedParentCustomerId, setAssociatedParentCustomerId] = useState("");
+  const [page, setPage] = useState(1);
 
   // useEffect fetch properties
   useEffect(() => {
@@ -351,7 +353,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     if (wswHubCustomers.length > 0) {
       return (
       <Flex>
-        <Table paginated="true" maxVisiblePageButtons="5" showFirstLastButtons="true">
+        <Table paginated={true} page={page} pageCount={Math.ceil(allWoppNotes.length/PAGE_SIZE)} onPageChange={(num) => setPage(num)} maxVisiblePageButtons="5" showFirstLastButtons="true">
           <TableHead>
             <TableRow>
               <TableHeader>KUNNR</TableHeader>
