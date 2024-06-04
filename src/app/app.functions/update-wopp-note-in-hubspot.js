@@ -17,15 +17,13 @@ const ESTIMATED_LENGTH_NOTE = 1000;
 /* ++++++++++  CONSTANTS ++++++++++ */
 
 /* ---------- FUNCTIONS ---------- */
-function updateObjectFromJsonArrayWhereKeyHasCertainValue(objectArray,key,value,updateAmount,updateMaterial,updateDescription,updateKurztext,updateErgaenztVon,updateTime,userEmail) {
-    {
-        return objectArray.map(note => {
-          if (note[key] === value) {
-            return { ...note, amount: updateAmount, material: updateMaterial,description: updateDescription, kurztext: updateKurztext, ergaenzt_von: updateErgaenztVon, update_data: updateTime, updated_by: userEmail };
-          }
-          return person;
-        });
-      };
+const getUpdatedNoteProperties = (objectArray,key,value,updates) => {
+  return objectArray.map(note => {
+      if (note[key] === value) {
+      return { ...note, ...updates };
+      }
+      return note;
+  });
 }
 
 async function updateHubSpotWopp(woppId,updateBody) {
@@ -54,36 +52,45 @@ async function updateHubSpotWopp(woppId,updateBody) {
 /* ++++++++++ FUNCTIONS ++++++++++ */
 
 exports.main = async (context = {}) => {
+    // console.log(context.parameters);  
     const { woppId, notePosition, woppNotes1, woppNotes2, woppNotes3, updateAmount, updateMaterial, updateDescription, updateKurztext, updateErgaenztVon, updateTime, userEmail } = context.parameters;
-  
+
     try {
-      let currentDate = new Date().toISOString()
-      let userEmail = contextInfo.user.email;
       let lengthNotes1 = woppNotes1 ? woppNotes1.length : 0;
       let lengthNotes2 = woppNotes2 ? woppNotes2.length : 0;
       let lengthNotes3 = woppNotes3 ? woppNotes3.length : 0;
       let updateProperties = {
         properties: {}
       };
+      let updates = {
+        // position: notePosition,
+        amount: updateAmount,
+        material: updateMaterial,
+        description: updateDescription,
+        kurztext: updateKurztext,
+        ergaenzt_von: updateErgaenztVon,
+        update_date: updateTime,
+        updatedBy: userEmail
+      };
+      
+      console.log('lengthNotes1',lengthNotes1,'lengthNotes2',lengthNotes2,'lengthNotes3',lengthNotes3);
 
       if (lengthNotes3 > 0) {
         let foundObjects = JSON.parse(woppNotes3).filter(n => n.position === notePosition);
         if (foundObjects.length > 0) {
-            updateProperties.properties = {'wsw_wopp_notes_3': JSON.stringify(updateObjectFromJsonArrayWhereKeyHasCertainValue(JSON.parse(woppNotes3),'position',notePosition,updateAmount,updateMaterial,updateDescription,updateKurztext,updateErgaenztVon,updateTime,userEmail)) }
+            updateProperties.properties = {'wsw_wopp_notes_3': JSON.stringify(getUpdatedNoteProperties(JSON.parse(woppNotes3),'position',notePosition,updates)) }
         }
       } else if (lengthNotes2 > 0) {
         let foundObjects = JSON.parse(woppNotes2).filter(n => n.position === notePosition);
         if (foundObjects.length > 0) {
-            updateProperties.properties = {'wsw_wopp_notes_2': JSON.stringify(updateObjectFromJsonArrayWhereKeyHasCertainValue(JSON.parse(woppNotes2),'position',notePosition,updateAmount,updateMaterial,updateDescription,updateKurztext,updateErgaenztVon,updateTime,userEmail)) }
+            updateProperties.properties = {'wsw_wopp_notes_2': JSON.stringify(getUpdatedNoteProperties(JSON.parse(woppNotes2),'position',notePosition,updates)) }
         }
       } else {
         let foundObjects = JSON.parse(woppNotes1).filter(n => n.position === notePosition);
         if (foundObjects.length > 0) {
-            updateProperties.properties = {'wsw_wopp_notes_1': JSON.stringify(updateObjectFromJsonArrayWhereKeyHasCertainValue(JSON.parse(woppNotes1),'position',notePosition,updateAmount,updateMaterial,updateDescription,updateKurztext,updateErgaenztVon,updateTime,userEmail))}
+            updateProperties.properties = {'wsw_wopp_notes_1': JSON.stringify(getUpdatedNoteProperties(JSON.parse(woppNotes1),'position',notePosition,updates))}
         }        
       }
-
-      console.log(JSON.stringify(updateProperties));
 
       // update wopp
       let responseUpdateWopp = await updateHubSpotWopp(woppId,updateProperties);

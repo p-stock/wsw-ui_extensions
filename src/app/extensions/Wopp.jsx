@@ -37,6 +37,7 @@ const HS_CO_PARENT_CUSTOMER_TO_COMPANY_ASSOCIATION_TYPE_ID = IS_PROD ? null : 59
 const HS_COMPANY_TO_CO_PARENT_CUSTOMER_ASSOCIATION_TYPE_ID = IS_PROD ? null : 60;
 const HS_COMPANY_PARENT_CUSTOMER_ID_SAP_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_sap_id";
 const HS_COMPANY_PARENT_CUSTOMER_ID_HS_PROPERTY_SYNC_INTERNAL_VALUE = IS_PROD ? null : "wsw_parent_customer_id_hs";
+const PAGE_SIZE = 5;
 
 
 // Define the extension to be run within the Hubspot CRM
@@ -70,6 +71,8 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const [woppUpdateNoteKurztext, setWoppUpdateNoteKurztext] = useState(null);
     const [woppUpdateNoteMaterial, setWoppUpdateNoteMaterial] = useState(null);
     const [woppUpdateNoteErgaenztVon, setWoppUpdateNoteErgaenztVon] = useState(null);
+    const [reloadWoppNotes, setReloadWoppNotes] = useState(null);
+    const [page, setPage] = useState(1);
 
     function getAllWoppNotesArray(wn1,wn2,wn3) {
         let allWoppNotes = [];
@@ -94,7 +97,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
             setWoppNotes3(properties.wsw_wopp_notes_3);
             setAllWoppNotes(getAllWoppNotesArray(properties.wsw_wopp_notes_1,properties.wsw_wopp_notes_2,properties.wsw_wopp_notes_3));
         })
-    }, [fetchProperties]);
+    }, [fetchProperties,reloadWoppNotes]);
 
     /*
     // useEffect get deal's associated company
@@ -131,10 +134,11 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         )
         
         if (response.statusCode == 200) {
-            sendAlert({ message: 'check pos', type: 'danger' })
+            sendAlert({ message: response.message, type: 'success' })
         } else {
-            sendAlert({ message: 'check neg', type: 'danger' })
-        }
+            sendAlert({ message: response.message, type: 'danger' })
+        };
+        setReloadWoppNotes(!reloadWoppNotes);
     }
 
     const handleClickButtonCreate = async () => {
@@ -157,10 +161,11 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         );
 
         if (response.statusCode == 200) {
-            sendAlert({ message: 'check create pos', type: 'danger' })
+            sendAlert({ message: response.message, type: 'success' })
         } else {
-            sendAlert({ message: 'check create neg', type: 'danger' })
-        }
+            sendAlert({ message: response.message, type: 'danger' })
+        };
+        setReloadWoppNotes(!reloadWoppNotes)
     }
 
     const handleClickButtonUpdate = async () => {
@@ -184,11 +189,13 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
             }
         );        
         
+        console.log(JSON.stringify(response));
         if (response.statusCode == 200) {
-            sendAlert({ message: 'check update pos', type: 'danger' })
+            sendAlert({ message: response.message, type: 'success' })
         } else {
-            sendAlert({ message: 'check update neg', type: 'danger' })
+            sendAlert({ message: response.message, type: 'danger' })
         }
+        setReloadWoppNotes(!reloadWoppNotes);
     }
 
     // component functions
@@ -196,7 +203,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         if (allWoppNotes.length > 0) {
             return (
                 <Flex>
-                    <Table paginated="true" maxVisiblePageButtons="5" showFirstLastButtons="true">
+                    <Table paginated={true} page={page} pageCount={Math.ceil(allWoppNotes.length/PAGE_SIZE)} onPageChange={(num) => setPage(num)} maxVisiblePageButtons="5" showFirstLastButtons="true">
                         <TableHead>
                             <TableRow>
                                 <TableHeader>Position</TableHeader>
@@ -212,7 +219,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {allWoppNotes.map((note) => (
+                            {allWoppNotes.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map((note) => (
                             <TableRow key={note['position']}>
                                 <TableCell>{note['position']}</TableCell>
                                 <TableCell>{note['material']}</TableCell>
@@ -341,7 +348,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               placeholder="Material"
               value={woppUpdateNoteMaterial}
               onChange={(value) => {
-                setNewNoteMaterial(value)
+                setWoppUpdateNoteMaterial(value)
               }}
             />
             <TextArea
@@ -352,7 +359,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               placeholder="Kurztext"
               value={woppUpdateNoteKurztext}
               onChange={(value) => {
-                setNewNoteKurztext(value)
+                setWoppUpdateNoteKurztext(value)
               }}
             />
             <Input
@@ -363,7 +370,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               placeholder="Menge"
               value={woppUpdateNoteAmount}
               onChange={(value) => {
-                setNewNoteAmount(value)
+                setWoppUpdateNoteAmount(value)
               }}
             />
             <TextArea
@@ -374,7 +381,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               placeholder="Description"
               value={woppUpdateNoteDescription}
               onChange={(value) => {
-                setNewNoteDescription(value)
+                setWoppUpdateNoteDescription(value)
               }}
             />
             <Input
@@ -385,7 +392,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               placeholder="Ergänzt von"
               value={woppUpdateNoteErgaenztVon}
               onChange={(value) => {
-                setNewNoteErgaenztVon(value)
+                setWoppUpdateNoteErgaenztVon(value)
               }}
             />
             <Button
@@ -402,7 +409,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
         );
     }
 
-    // entire component
+    // entire component 
     return (
         <>
         <Heading>UI extension WOPP Notes</Heading>

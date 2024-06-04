@@ -18,17 +18,18 @@ const ESTIMATED_LENGTH_NOTE = 1000;
 
 /* ---------- FUNCTIONS ---------- */
 function getMaxMinObjectFromJsonArrayForCertainKey(objectArray,key,max=true) {
-    let maxMinObject;
-    if (max) {
-        maxMinObject = objectArray.reduce((max, o) => {
-            return (o[key] > max[key]) ? o : max;
-        }, objectArray[0]);
-    } else {
-        maxMinObject = objectArray.reduce((min, o) => {
-            return (o[key] < min[key]) ? o : min;
-        }, objectArray[0]);
-    }
-    return maxMinObject;
+  if (objectArray.length == 0) return { position: 0 };  
+  let maxMinObject;
+  if (max) {
+      maxMinObject = objectArray.reduce((max, o) => {
+          return (o[key] > max[key]) ? o : max;
+      }, objectArray[0]);
+  } else {
+      maxMinObject = objectArray.reduce((min, o) => {
+          return (o[key] < min[key]) ? o : min;
+      }, objectArray[0]);
+  }
+  return maxMinObject;
 }
 
 async function updateHubSpotWopp(woppId,updateBody) {
@@ -48,7 +49,10 @@ async function updateHubSpotWopp(woppId,updateBody) {
       try {
         let responseUpdateObject = await axios.request(config);
         console.log('responseStatus function updateHubSpotWopp:',responseUpdateObject.status);
-        return responseUpdateObject.data
+        return {
+          statusCode: 200,
+          body: responseUpdateObject.data
+        }
       } catch(error) {
         console.log(error);
         throw new Error(error);
@@ -85,7 +89,7 @@ exports.main = async (context = {}) => {
         properties: {}
       };
       let alertPropertiesAreReachingLimit = false;
-      let messagePropertiesAreReachingLimit = `Notes will exceed available property limit soon. Please address admin!`;
+      let messagePropertiesAreReachingLimit = ` Notes will exceed available property limit soon. Please address admin!`;
 
       console.log('length1',lengthNotes1,'length2',lengthNotes2,'length3',lengthNotes3,'new',lengthNewNote);
 
@@ -104,30 +108,30 @@ exports.main = async (context = {}) => {
         let newPosition = await getMaxMinObjectFromJsonArrayForCertainKey(JSON.parse(woppNotes2),'position');
         newNote['position'] = parseInt(newPosition.position) + 1000;
         if (lengthNotes2 + lengthNewNote > MAX_CHARACTERS_SINGLE_LINE_TEXT) {
-            updateProperties.properties = { 'wsw_wopp_notes_3': JSON.stringify(JSON.parse(woppNotes3).concat(newNote)) }
+            updateProperties.properties = { 'wsw_wopp_notes_3': JSON.stringify((lengthNotes3 > 0 ? JSON.parse(woppNotes3) : []).concat(newNote)) }
         } else {
-            updateProperties.properties = {'wsw_wopp_notes_2': JSON.stringify(JSON.parse(woppNotes2).concat(newNote)) }
+            updateProperties.properties = {'wsw_wopp_notes_2': JSON.stringify((lengthNotes2 > 0 ? JSON.parse(woppNotes2) : []).concat(newNote)) }
         }        
       } else {
-        let newPosition = await getMaxMinObjectFromJsonArrayForCertainKey(JSON.parse(woppNotes1),'position');
+        let newPosition = await getMaxMinObjectFromJsonArrayForCertainKey(lengthNotes1 > 0 ? JSON.parse(woppNotes1) : [],'position');
+        // console.log(JSON.stringify(newPosition));
         newNote['position'] = parseInt(newPosition.position) + 1000;
         if (lengthNotes1 + lengthNewNote > MAX_CHARACTERS_SINGLE_LINE_TEXT) {
-            updateProperties.properties = { 'wsw_wopp_notes_2': JSON.stringify(JSON.parse(woppNotes2).concat(newNote)) }
+            updateProperties.properties = { 'wsw_wopp_notes_2': JSON.stringify((lengthNotes2 > 0 ? JSON.parse(woppNotes2) : []).concat(newNote)) }
         } else {
-            updateProperties.properties = { 'wsw_wopp_notes_1': JSON.stringify(JSON.parse(woppNotes1).concat(newNote)) }
+            updateProperties.properties = { 'wsw_wopp_notes_1': JSON.stringify((lengthNotes1 > 0 ? JSON.parse(woppNotes1) : []).concat(newNote)) }
         }          
       }
 
-      console.log(JSON.stringify(updateProperties));
+      // console.log(JSON.stringify(updateProperties));
 
       // update wopp
       let responseUpdateWopp = await updateHubSpotWopp(woppId,updateProperties);
-      return {
-        message: `Successfully executed the serverless function (create-wopp-note-in-hubspot).`, 
-        body: responseUpdateWopp,
-        statusCode: 200
-      }
+      let message = `Successfully executed the serverless function (create-wopp-note-in-hubspot).`;
+      if (alertPropertiesAreReachingLimit) message += messagePropertiesAreReachingLimit;
+      return { message, statusCode: 200 };
     } catch (error) {
+      console.log(error);
       let message = `There was an error executing the serverless function (create-wopp-note-in-hubspot): ${error.message}`
       return { message, statusCode: 400 };
     }
