@@ -53,7 +53,7 @@ async function updateHubSpotWopp(woppId,updateBody) {
 
 exports.main = async (context = {}) => {
     // console.log(context.parameters);  
-    const { woppId, notePosition, woppNotes1, woppNotes2, woppNotes3, updateAmount, updateMaterial, updateDescription, updateKurztext, updateErgaenztVon, updateTime, userEmail } = context.parameters;
+    const { woppId, notePosition, woppNotes1, woppNotes2, woppNotes3, updateAmount, updateMe, updateMaterial, updateDescription, updateKurztext, updateErgaenztVon, updateTime, userEmail } = context.parameters;
 
     try {
       let lengthNotes1 = woppNotes1 ? woppNotes1.length : 0;
@@ -65,6 +65,7 @@ exports.main = async (context = {}) => {
       let updates = {
         // position: notePosition,
         amount: updateAmount,
+        me: updateMe,
         material: updateMaterial,
         description: updateDescription,
         kurztext: updateKurztext,

@@ -60,6 +60,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const [showWoppNotes, setShowWoppNotes] = useState(true);
     const [allWoppNotes, setAllWoppNotes] = useState([]);
     const [newNoteAmount, setNewNoteAmount] = useState(null);
+    const [newNoteMe, setNewNoteMe] = useState(null);
     const [newNoteDescription, setNewNoteDescription] = useState(null);
     const [newNoteMaterial, setNewNoteMaterial] = useState(null);
     const [newNoteKurztext, setNewNoteKurztext] = useState(null);
@@ -68,6 +69,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const [woppUpdateNotePosition, setWoppUpdateNotePosition] = useState(null);
     const [woppUpdateNoteDescription, setWoppUpdateNoteDescription] = useState(null);
     const [woppUpdateNoteAmount, setWoppUpdateNoteAmount] = useState(null);
+    const [woppUpdateNoteMe, setWoppUpdateNoteMe] = useState(null);
     const [woppUpdateNoteKurztext, setWoppUpdateNoteKurztext] = useState(null);
     const [woppUpdateNoteMaterial, setWoppUpdateNoteMaterial] = useState(null);
     const [woppUpdateNoteErgaenztVon, setWoppUpdateNoteErgaenztVon] = useState(null);
@@ -111,6 +113,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
     const handleClickRowButtonUpdate = async (note) => {
         setWoppUpdateNotePosition(note.position);
         setWoppUpdateNoteAmount(note.amount ? note.amount : '');
+        setWoppUpdateNoteMe(note.me ? note.me : '');
         setWoppUpdateNoteDescription(note.description ?  note.description : '');
         setWoppUpdateNoteKurztext(note.kurztext ? note.kurztext : '');
         setWoppUpdateNoteMaterial(note.material ? note.material : '');
@@ -150,6 +153,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
                     newNoteMaterial: newNoteMaterial,
                     newNoteAmount: newNoteAmount,
                     newNoteDescription: newNoteDescription,
+                    newNoteMe: newNoteMe,
                     newNoteErgaenztVon: newNoteErgaenztVon,
                     newNoteKurztext: newNoteKurztext,
                     woppNotes1: woppNotes1,
@@ -179,6 +183,7 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
                     woppNotes2: woppNotes2,
                     woppNotes3: woppNotes3,
                     updateAmount: woppUpdateNoteAmount,
+                    updateMe: woppUpdateNoteMe,
                     updateMaterial: woppUpdateNoteMaterial, 
                     updateDescription: woppUpdateNoteDescription,
                     updateKurztext: woppUpdateNoteKurztext,
@@ -293,6 +298,16 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
                 setNewNoteAmount(value)
               }}
             />
+            <Input
+              label="ME"
+              name="me"
+              tooltip="Please enter ME"
+              description="Please enter ME"
+              placeholder="Menge"
+              onChange={(value) => {
+                setNewNoteMe(value)
+              }}
+            />
             <TextArea
               label="Beschreibung"
               name="beschreibung"
@@ -371,6 +386,17 @@ const Extension = ({ context, runServerless, fetchProperties, sendAlert }) => {
               value={woppUpdateNoteAmount}
               onChange={(value) => {
                 setWoppUpdateNoteAmount(value)
+              }}
+            />
+            <Input
+              label="ME"
+              name="me"
+              tooltip="Please enter me"
+              description="Please enter me"
+              placeholder="ME"
+              value={woppUpdateNoteMe}
+              onChange={(value) => {
+                setWoppUpdateNoteMe(value)
               }}
             />
             <TextArea

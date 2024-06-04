@@ -62,7 +62,7 @@ async function updateHubSpotWopp(woppId,updateBody) {
 /* ++++++++++ FUNCTIONS ++++++++++ */
 
 exports.main = async (context = {}) => {
-    const { woppId, newNoteMaterial, newNoteAmount, newNoteDescription, newNoteErgaenztVon , newNoteKurztext, woppNotes1, woppNotes2, woppNotes3, contextInfo } = context.parameters;
+    const { woppId, newNoteMaterial, newNoteAmount, newNoteDescription, newNoteMe, newNoteErgaenztVon , newNoteKurztext, woppNotes1, woppNotes2, woppNotes3, contextInfo } = context.parameters;
   
     try {
       let currentDate = new Date().toISOString()
@@ -78,6 +78,7 @@ exports.main = async (context = {}) => {
         kurztext: newNoteKurztext,
         amount: newNoteAmount,
         description: newNoteDescription,
+        me: newNoteMe,
         ergaenzt_von: newNoteErgaenztVon,
         update_date: null,
         create_date: currentDate,
